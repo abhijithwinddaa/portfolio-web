@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
   Loader2,
   Save,
   X,
@@ -16,7 +16,7 @@ const TechStack = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(null);
-  
+
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -24,7 +24,8 @@ const TechStack = () => {
   const [formData, setFormData] = useState({
     name: '',
     category: '',
-    proficiency: 50
+    proficiency: 50,
+    display_order: 999
   });
   const [iconFile, setIconFile] = useState(null);
   const [iconPreview, setIconPreview] = useState('');
@@ -40,6 +41,7 @@ const TechStack = () => {
       const { data, error } = await supabase
         .from('tech_stack')
         .select('*')
+        .order('display_order', { ascending: true })
         .order('category', { ascending: true });
 
       if (error) throw error;
@@ -53,10 +55,10 @@ const TechStack = () => {
 
   const handleDelete = async (id, iconUrl) => {
     if (!window.confirm('Are you sure you want to delete this tech stack item?')) return;
-    
+
     try {
       setDeleteLoading(id);
-      
+
       // Delete the icon from storage if it exists
       if (iconUrl) {
         const iconPath = iconUrl.split('/').pop();
@@ -64,15 +66,15 @@ const TechStack = () => {
           .from('tech-icons')
           .remove([iconPath]);
       }
-      
+
       // Delete from the database
       const { error } = await supabase
         .from('tech_stack')
         .delete()
         .eq('id', id);
-        
+
       if (error) throw error;
-      
+
       // Update the UI
       setTechStacks(techStacks.filter(tech => tech.id !== id));
     } catch (error) {
@@ -88,7 +90,8 @@ const TechStack = () => {
     setFormData({
       name: tech.name || '',
       category: tech.category || '',
-      proficiency: tech.proficiency || 50
+      proficiency: tech.proficiency || 50,
+      display_order: tech.display_order || 999
     });
     setIconPreview(tech.icon_url || '');
     setIsFormOpen(true);
@@ -100,7 +103,8 @@ const TechStack = () => {
     setFormData({
       name: '',
       category: '',
-      proficiency: 50
+      proficiency: 50,
+      display_order: 999
     });
     setIconFile(null);
     setIconPreview('');
@@ -115,14 +119,14 @@ const TechStack = () => {
   const handleIconChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     if (file.size > 2 * 1024 * 1024) {
       alert('File size must be less than 2MB');
       return;
     }
-    
+
     setIconFile(file);
-    
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setIconPreview(reader.result);
@@ -137,62 +141,63 @@ const TechStack = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setFormLoading(true);
-      
+
       let iconUrl = isEditing ? techStacks.find(tech => tech.id === currentId)?.icon_url || '' : '';
-      
+
       // Upload icon if there's a new one
       if (iconFile) {
         const fileExt = iconFile.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `tech-icons/${fileName}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('tech-icons')
           .upload(filePath, iconFile);
-          
+
         if (uploadError) throw uploadError;
-        
+
         const { data } = supabase.storage
           .from('tech-icons')
           .getPublicUrl(filePath);
-          
+
         iconUrl = data.publicUrl;
       }
-      
+
       const techData = {
         name: formData.name,
         category: formData.category,
         proficiency: parseInt(formData.proficiency),
-        icon_url: iconUrl
+        icon_url: iconUrl,
+        display_order: parseInt(formData.display_order) || 999
       };
-      
+
       let error;
-      
+
       if (isEditing) {
         // Update existing tech stack item
         const { error: updateError } = await supabase
           .from('tech_stack')
           .update(techData)
           .eq('id', currentId);
-          
+
         error = updateError;
       } else {
         // Create new tech stack item
         const { error: insertError } = await supabase
           .from('tech_stack')
           .insert([{ ...techData, created_at: new Date().toISOString() }]);
-          
+
         error = insertError;
       }
-      
+
       if (error) throw error;
-      
+
       // Refresh the list
       fetchTechStack();
-      
+
       // Close the form
       setIsFormOpen(false);
     } catch (error) {
@@ -203,7 +208,7 @@ const TechStack = () => {
     }
   };
 
-  const filteredTechStack = techStacks.filter(tech => 
+  const filteredTechStack = techStacks.filter(tech =>
     tech.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     tech.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -222,7 +227,7 @@ const TechStack = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-white">Tech Stack</h1>
-        <button 
+        <button
           onClick={handleAddNew}
           className="flex items-center px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 hover:bg-green-500/30 transition-all"
         >
@@ -257,17 +262,17 @@ const TechStack = () => {
               <h2 className="text-xl font-semibold text-white">{category}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {techs.map((tech) => (
-                  <div 
+                  <div
                     key={tech.id}
                     className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 hover:border-green-500/30 transition-all group"
                   >
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 flex-shrink-0 bg-white/10 rounded-lg overflow-hidden flex items-center justify-center">
                         {tech.icon_url ? (
-                          <img 
-                            src={tech.icon_url} 
-                            alt={tech.name} 
-                            className="w-8 h-8 object-contain" 
+                          <img
+                            src={tech.icon_url}
+                            alt={tech.name}
+                            className="w-8 h-8 object-contain"
                           />
                         ) : (
                           <span className="text-gray-500 text-xs">No Icon</span>
@@ -276,8 +281,8 @@ const TechStack = () => {
                       <div className="flex-grow min-w-0">
                         <h3 className="text-white font-medium truncate">{tech.name}</h3>
                         <div className="mt-2 w-full bg-white/10 rounded-full h-1.5">
-                          <div 
-                            className="bg-gradient-to-r from-green-400 to-emerald-500 h-1.5 rounded-full" 
+                          <div
+                            className="bg-gradient-to-r from-green-400 to-emerald-500 h-1.5 rounded-full"
                             style={{ width: `${tech.proficiency}%` }}
                           ></div>
                         </div>
@@ -285,16 +290,20 @@ const TechStack = () => {
                           <span>Proficiency</span>
                           <span>{tech.proficiency}%</span>
                         </div>
+                        <div className="flex justify-between text-xs text-gray-400 mt-1">
+                          <span>Order</span>
+                          <span>{tech.display_order || 999}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="mt-4 flex justify-end space-x-2">
-                      <button 
+                      <button
                         onClick={() => handleEdit(tech)}
                         className="p-1.5 bg-amber-500/20 rounded-md text-amber-400 hover:bg-amber-500/30 transition-colors"
                       >
                         <Edit size={16} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDelete(tech.id, tech.icon_url)}
                         disabled={deleteLoading === tech.id}
                         className="p-1.5 bg-red-500/20 rounded-md text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
@@ -318,7 +327,7 @@ const TechStack = () => {
             {searchTerm ? 'No tech stack items match your search.' : 'No tech stack items found. Add your first tech!'}
           </p>
           {searchTerm && (
-            <button 
+            <button
               onClick={() => setSearchTerm('')}
               className="mt-4 px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 hover:bg-green-500/30 transition-all"
             >
@@ -331,19 +340,19 @@ const TechStack = () => {
       {/* Add/Edit Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a0a1a] border border-white/10 rounded-xl w-full max-w-md p-6 space-y-6">
+          <div className="bg-[#0a0a1a] border border-white/10 rounded-xl w-full max-w-md p-6 space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-white">
                 {isEditing ? 'Edit Tech Stack Item' : 'Add New Tech Stack Item'}
               </h2>
-              <button 
+              <button
                 onClick={() => setIsFormOpen(false)}
                 className="p-1.5 bg-white/10 rounded-full text-gray-400 hover:bg-white/20 transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Tech Name */}
               <div>
@@ -361,7 +370,7 @@ const TechStack = () => {
                   placeholder="e.g. React, Python, Tailwind CSS"
                 />
               </div>
-              
+
               {/* Category */}
               <div>
                 <label htmlFor="category" className="block text-sm font-medium text-gray-300">
@@ -378,7 +387,7 @@ const TechStack = () => {
                   placeholder="e.g. Frontend, Backend, DevOps"
                 />
               </div>
-              
+
               {/* Proficiency */}
               <div>
                 <label htmlFor="proficiency" className="block text-sm font-medium text-gray-300">
@@ -401,7 +410,25 @@ const TechStack = () => {
                   </span>
                 </div>
               </div>
-              
+
+              {/* Display Order */}
+              <div>
+                <label htmlFor="display_order" className="block text-sm font-medium text-gray-300">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  id="display_order"
+                  name="display_order"
+                  value={formData.display_order}
+                  onChange={handleChange}
+                  min="1"
+                  className="mt-1 block w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/30"
+                  placeholder="999"
+                />
+                <p className="mt-1 text-xs text-gray-400">Lower number = shows first (1, 2, 3...)</p>
+              </div>
+
               {/* Icon Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -410,9 +437,9 @@ const TechStack = () => {
                 {iconPreview ? (
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-white/10 rounded-lg flex items-center justify-center overflow-hidden">
-                      <img 
-                        src={iconPreview} 
-                        alt="Icon preview" 
+                      <img
+                        src={iconPreview}
+                        alt="Icon preview"
                         className="w-12 h-12 object-contain"
                       />
                     </div>
@@ -453,7 +480,7 @@ const TechStack = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Submit Button */}
               <div className="flex justify-end pt-4">
                 <button

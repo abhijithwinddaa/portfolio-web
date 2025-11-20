@@ -59,10 +59,6 @@ const ContactPage = () => {
             <div className="mt-4">
               <SocialLinks />
             </div>
-
-            <div className="text-center mt-8 text-contact-gradient-start">
-              Connect with me:
-            </div>
           </div>
 
           {/* Comments Section */}

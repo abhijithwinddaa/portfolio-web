@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Upload, 
-  X, 
+import {
+  ArrowLeft,
+  Upload,
+  X,
   Loader2,
   Save,
   Calendar
@@ -14,27 +14,28 @@ const CertificateForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     issuer: '',
     issue_date: '',
     expiry_date: '',
     credential_url: '',
-    image_url: ''
+    image_url: '',
+    display_order: 999
   });
-  
+
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(isEditMode);
-  
+
   useEffect(() => {
     if (isEditMode) {
       fetchCertificate();
     }
   }, [id]);
-  
+
   const fetchCertificate = async () => {
     try {
       setFetchLoading(true);
@@ -43,9 +44,9 @@ const CertificateForm = () => {
         .select('*')
         .eq('id', id)
         .single();
-        
+
       if (error) throw error;
-      
+
       if (data) {
         setFormData({
           title: data.title || '',
@@ -53,9 +54,10 @@ const CertificateForm = () => {
           issue_date: data.issue_date ? data.issue_date.split('T')[0] : '',
           expiry_date: data.expiry_date ? data.expiry_date.split('T')[0] : '',
           credential_url: data.credential_url || '',
-          image_url: data.image_url || ''
+          image_url: data.image_url || '',
+          display_order: data.display_order || 999
         });
-        
+
         if (data.image_url) {
           setImagePreview(data.image_url);
         }
@@ -66,93 +68,94 @@ const CertificateForm = () => {
       setFetchLoading(false);
     }
   };
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     if (file.size > 5 * 1024 * 1024) {
       alert('File size must be less than 5MB');
       return;
     }
-    
+
     setImageFile(file);
-    
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
     };
     reader.readAsDataURL(file);
   };
-  
+
   const removeImage = () => {
     setImageFile(null);
     setImagePreview('');
     setFormData(prev => ({ ...prev, image_url: '' }));
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
-      
+
       let imageUrl = formData.image_url;
-      
+
       // Upload image if there's a new one
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `certificate-images/${fileName}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('certificate-images')
           .upload(filePath, imageFile);
-          
+
         if (uploadError) throw uploadError;
-        
+
         const { data } = supabase.storage
           .from('certificate-images')
           .getPublicUrl(filePath);
-          
+
         imageUrl = data.publicUrl;
       }
-      
+
       const certificateData = {
         title: formData.title,
         issuer: formData.issuer,
         issue_date: formData.issue_date || null,
         expiry_date: formData.expiry_date || null,
         credential_url: formData.credential_url,
-        image_url: imageUrl
+        image_url: imageUrl,
+        display_order: parseInt(formData.display_order) || 999
       };
-      
+
       let error;
-      
+
       if (isEditMode) {
         // Update existing certificate
         const { error: updateError } = await supabase
           .from('certificates')
           .update(certificateData)
           .eq('id', id);
-          
+
         error = updateError;
       } else {
         // Create new certificate
         const { error: insertError } = await supabase
           .from('certificates')
           .insert([{ ...certificateData, created_at: new Date().toISOString() }]);
-          
+
         error = insertError;
       }
-      
+
       if (error) throw error;
-      
+
       navigate('/admin/certificates');
     } catch (error) {
       console.error('Error saving certificate:', error);
@@ -161,7 +164,7 @@ const CertificateForm = () => {
       setLoading(false);
     }
   };
-  
+
   if (fetchLoading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -169,7 +172,7 @@ const CertificateForm = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -184,7 +187,7 @@ const CertificateForm = () => {
           {isEditMode ? 'Edit Certificate' : 'Add New Certificate'}
         </h1>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 space-y-6">
           {/* Certificate Image */}
@@ -196,9 +199,9 @@ const CertificateForm = () => {
               {imagePreview ? (
                 <div className="space-y-4 w-full">
                   <div className="relative mx-auto w-full max-w-md">
-                    <img 
-                      src={imagePreview} 
-                      alt="Certificate preview" 
+                    <img
+                      src={imagePreview}
+                      alt="Certificate preview"
                       className="h-64 w-full object-cover rounded-lg"
                     />
                     <button
@@ -243,7 +246,7 @@ const CertificateForm = () => {
               )}
             </div>
           </div>
-          
+
           {/* Certificate Title */}
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-300">
@@ -260,7 +263,7 @@ const CertificateForm = () => {
               placeholder="Enter certificate title"
             />
           </div>
-          
+
           {/* Issuer */}
           <div>
             <label htmlFor="issuer" className="block text-sm font-medium text-gray-300">
@@ -277,7 +280,7 @@ const CertificateForm = () => {
               placeholder="Enter issuing organization"
             />
           </div>
-          
+
           {/* Dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -317,7 +320,7 @@ const CertificateForm = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Credential URL */}
           <div>
             <label htmlFor="credential_url" className="block text-sm font-medium text-gray-300">
@@ -333,8 +336,26 @@ const CertificateForm = () => {
               placeholder="https://example.com/credential"
             />
           </div>
+
+          {/* Display Order */}
+          <div>
+            <label htmlFor="display_order" className="block text-sm font-medium text-red-400">
+              Display Order
+            </label>
+            <input
+              type="number"
+              id="display_order"
+              name="display_order"
+              value={formData.display_order}
+              onChange={handleChange}
+              min="1"
+              className="mt-1 block w-full px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-white placeholder-red-300 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50"
+              placeholder="999"
+            />
+            <p className="mt-1 text-xs text-gray-400">Lower number = shows first (1, 2, 3...)</p>
+          </div>
         </div>
-        
+
         {/* Submit Button */}
         <div className="flex justify-end">
           <button

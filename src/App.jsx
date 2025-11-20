@@ -13,6 +13,13 @@ import ProjectDetails from "./components/ProjectDetail";
 import WelcomeScreen from "./Pages/WelcomeScreen";
 import { AnimatePresence } from 'framer-motion';
 import { supabase } from "./supabase";
+import CustomCursor from "./components/CustomCursor";
+import ScrollProgress from "./components/ScrollProgress";
+
+// Blog pages
+import Blog from "./Pages/Blog";
+import BlogDetail from "./Pages/BlogDetail";
+import BlogManagement from "./Pages/Admin/BlogManagement";
 
 // Admin components
 import AdminLayout from "./Pages/Admin/AdminLayout";
@@ -105,35 +112,42 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Main Website Routes */}
-        <Route path="/" element={<LandingPage showWelcome={showWelcome} setShowWelcome={setShowWelcome} />} />
-        <Route path="/project/:id" element={<ProjectPageLayout />} />
-        
-        {/* Admin Routes */}
-        <Route path="/admin/login" element={<Login />} />
-        <Route path="/admin" element={<AuthGuard />}>
-          <Route element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="projects" element={<Projects />} />
-            <Route path="projects/new" element={<ProjectForm />} />
-            <Route path="projects/edit/:id" element={<ProjectForm />} />
-            <Route path="certificates" element={<Certificates />} />
-            <Route path="certificates/new" element={<CertificateForm />} />
-            <Route path="certificates/edit/:id" element={<CertificateForm />} />
-            <Route path="tech-stack" element={<TechStack />} />
-            <Route path="experience" element={<Experience />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="social-links" element={<SocialLinks />} />
-            <Route path="settings" element={<Settings />} />
+    <>
+      <CustomCursor />
+      <ScrollProgress />
+      <BrowserRouter>
+        <Routes>
+          {/* Main Website Routes */}
+          <Route path="/" element={<LandingPage showWelcome={showWelcome} setShowWelcome={setShowWelcome} />} />
+          <Route path="/project/:id" element={<ProjectPageLayout />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogDetail />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<Login />} />
+          <Route path="/admin" element={<AuthGuard />}>
+            <Route element={<AdminLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="projects" element={<Projects />} />
+              <Route path="projects/new" element={<ProjectForm />} />
+              <Route path="projects/edit/:id" element={<ProjectForm />} />
+              <Route path="certificates" element={<Certificates />} />
+              <Route path="certificates/new" element={<CertificateForm />} />
+              <Route path="certificates/edit/:id" element={<CertificateForm />} />
+              <Route path="tech-stack" element={<TechStack />} />
+              <Route path="experience" element={<Experience />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="social-links" element={<SocialLinks />} />
+              <Route path="blog" element={<BlogManagement />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
           </Route>
-        </Route>
-        
-        {/* 404 Not Found Route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+
+          {/* 404 Not Found Route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 }
 

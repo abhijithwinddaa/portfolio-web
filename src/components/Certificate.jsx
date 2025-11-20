@@ -1,9 +1,10 @@
-import React, { useState } from "react"
-import { Modal, IconButton, Box, Fade, Backdrop, Zoom, Typography } from "@mui/material"
+import React, { useState, memo } from "react"
+import { Modal, IconButton, Box, Backdrop, Typography } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
 import FullscreenIcon from "@mui/icons-material/Fullscreen"
+import Card from "./Card"
 
-const Certificate = ({ ImgSertif }) => {
+const Certificate = memo(({ ImgSertif }) => {
 	const [open, setOpen] = useState(false)
 
 	const handleOpen = () => {
@@ -17,29 +18,10 @@ const Certificate = ({ ImgSertif }) => {
 	return (
 		<Box component="div" sx={{ width: "100%" }}>
 			{/* Thumbnail Container */}
-			<Box
-				className=""
-				sx={{
-					position: "relative",
-					overflow: "hidden",
-					borderRadius: 2,
-					boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-					transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-					"&:hover": {
-						transform: "translateY(-5px)",
-						boxShadow: "0 12px 24px rgba(0,0,0,0.2)",
-						"& .overlay": {
-							opacity: 1,
-						},
-						"& .hover-content": {
-							transform: "translate(-50%, -50%)",
-							opacity: 1,
-						},
-						"& .certificate-image": {
-							filter: "contrast(1.05) brightness(1) saturate(1.1)",
-						},
-					},
-				}}>
+			<Card
+				onClick={handleOpen}
+				className="cursor-pointer group"
+			>
 				{/* Certificate Image with Initial Filter */}
 				<Box
 					sx={{
@@ -67,7 +49,6 @@ const Certificate = ({ ImgSertif }) => {
 							filter: "contrast(1.10) brightness(0.9) saturate(1.1)",
 							transition: "filter 0.3s ease",
 						}}
-						onClick={handleOpen}
 					/>
 				</Box>
 
@@ -82,23 +63,26 @@ const Certificate = ({ ImgSertif }) => {
 						bottom: 0,
 						opacity: 0,
 						transition: "all 0.3s ease",
-						cursor: "pointer",
 						zIndex: 2,
-					}}
-					onClick={handleOpen}>
+						backgroundColor: "rgba(0, 0, 0, 0.3)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						"&:hover": {
+							opacity: 1,
+						}
+					}}>
 					{/* Hover Content */}
 					<Box
 						className="hover-content"
 						sx={{
-							position: "absolute",
-							top: "50%",
-							left: "50%",
-							transform: "translate(-50%, -60%)",
-							opacity: 0,
-							transition: "all 0.4s ease",
 							textAlign: "center",
-							width: "100%",
 							color: "white",
+							transform: "translateY(20px)",
+							transition: "transform 0.3s ease",
+							".group:hover &": {
+								transform: "translateY(0)",
+							}
 						}}>
 						<FullscreenIcon
 							sx={{
@@ -117,7 +101,7 @@ const Certificate = ({ ImgSertif }) => {
 						</Typography>
 					</Box>
 				</Box>
-			</Box>
+			</Card>
 
 			{/* Modal */}
 			<Modal
@@ -192,6 +176,6 @@ const Certificate = ({ ImgSertif }) => {
 			</Modal>
 		</Box>
 	)
-}
+})
 
 export default Certificate

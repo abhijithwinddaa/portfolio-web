@@ -125,15 +125,17 @@ export default function FullWidthTabs() {
       // Fetch projects from Supabase
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .select('*');
-      
+        .select('*')
+        .order('display_order', { ascending: true });
+
       if (projectError) throw projectError;
 
       // Fetch certificates from Supabase
       const { data: certificateData, error: certificateError } = await supabase
         .from('certificates')
-        .select('*');
-      
+        .select('*')
+        .order('display_order', { ascending: true });
+
       if (certificateError) throw certificateError;
 
       // Format project data to match expected structure
@@ -165,11 +167,11 @@ export default function FullWidthTabs() {
       localStorage.setItem("certificates", JSON.stringify(formattedCertificates));
     } catch (error) {
       console.error("Error fetching data:", error);
-      
+
       // Fallback to empty arrays if there's an error
       setProjects([]);
       setCertificates([]);
-      
+
       localStorage.setItem("projects", JSON.stringify([]));
       localStorage.setItem("certificates", JSON.stringify([]));
     }
@@ -360,8 +362,8 @@ export default function FullWidthTabs() {
           </TabPanel>
 
           <TabPanel value={value} index={1} dir={theme.direction}>
-             {/* Certificate Count Display */}
-             <div className="mb-8 text-center" data-aos="fade-up" data-aos-delay="400">
+            {/* Certificate Count Display */}
+            <div className="mb-8 text-center" data-aos="fade-up" data-aos-delay="400">
               <strong className="text-white text-xl">{certificates.length}</strong> <span className="text-gray-400">Total Certificates</span>
             </div>
             <div className="container mx-auto flex justify-center items-center overflow-hidden">

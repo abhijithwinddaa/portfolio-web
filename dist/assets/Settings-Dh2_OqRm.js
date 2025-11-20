@@ -1,0 +1,1 @@
+import{j as s}from"./index-CJfiuc-8.js";function e(){return s.jsxs("div",{children:[s.jsx("h1",{children:"Settings Page"}),s.jsx("p",{children:"This is the admin settings page."})]})}export{e as default};
