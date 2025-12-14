@@ -117,11 +117,14 @@ const TYPING_SPEED = 100;
 const ERASING_SPEED = 50;
 const PAUSE_DURATION = 2000;
 const WORDS = ["FullStack Developer and prompt engineer", "Tech Enthusiast"];
-const SOCIAL_LINKS = [
-  { icon: Github, link: "https://github.com/abhijithwinddaa" },
-  { icon: Linkedin, link: "https://www.linkedin.com/in/batturaj-abhijith" },
 
-];
+// Icon mapping for social platforms
+const ICON_MAP = {
+  github: Github,
+  linkedin: Linkedin,
+  mail: Mail,
+  instagram: Instagram,
+};
 
 const Home = () => {
   const [text, setText] = useState("");
@@ -133,6 +136,9 @@ const Home = () => {
   const [techStack, setTechStack] = useState([]);
   const [resumeUrl, setResumeUrl] = useState("");
   const [shouldLoadLottie, setShouldLoadLottie] = useState(false);
+  const [socialLinks, setSocialLinks] = useState([]);
+  const [lottieError, setLottieError] = useState(false);
+  const [profileBio, setProfileBio] = useState("");
 
   // Lazy load Lottie only when visible
   const [lottieRef, isLottieInView] = useInView({ threshold: 0.1, triggerOnce: true });
@@ -144,6 +150,16 @@ const Home = () => {
       return () => clearTimeout(timer);
     }
   }, [isLottieInView]);
+
+  // Fallback: Load Lottie after 1 second if intersection observer hasn't triggered
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      if (!shouldLoadLottie) {
+        setShouldLoadLottie(true);
+      }
+    }, 1000);
+    return () => clearTimeout(fallbackTimer);
+  }, []);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -210,6 +226,44 @@ const Home = () => {
 
     fetchTechStack();
     fetchResume();
+
+    // Fetch social links from Supabase
+    const fetchSocialLinks = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('social_links')
+          .select('*');
+        if (error) throw error;
+        // Map platform to icon
+        const linksWithIcons = (data || []).map(link => ({
+          icon: ICON_MAP[link.platform.toLowerCase()] || Github,
+          link: link.url
+        }));
+        setSocialLinks(linksWithIcons);
+      } catch (error) {
+        console.error("Error fetching social links:", error);
+        // Fallback to empty array
+        setSocialLinks([]);
+      }
+    };
+    fetchSocialLinks();
+
+    // Fetch profile bio
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profile')
+          .select('bio')
+          .single();
+        if (error) throw error;
+        if (data && data.bio) {
+          setProfileBio(data.bio);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+    fetchProfile();
   }, []);
 
   // Optimized Lottie configuration - only created when needed and memoized
@@ -217,13 +271,10 @@ const Home = () => {
     if (!shouldLoadLottie) return null;
 
     return {
-      src: "https://lottie.host/58753882-bb6a-49f5-a2c0-950eda1e135a/NLbpVqGegK.lottie",
+      // Captain Deadpool animation from LottieFiles
+      src: "https://assets-v2.lottiefiles.com/a/55105c28-af2a-11ef-be3b-9bab2c745e85/iJngYOR65K.lottie",
       loop: true,
       autoplay: true,
-      rendererSettings: {
-        preserveAspectRatio: "xMidYMid slice",
-        progressiveLoad: true,
-      },
       style: { width: "100%", height: "100%" },
       className: `w-full h-full transition-all duration-500 ${isHovering ? "scale-[105%] rotate-2" : "scale-[100%]"}`,
     };
@@ -254,12 +305,21 @@ const Home = () => {
                   <span className="w-[3px] h-6 bg-gradient-to-t from-[#6366f1] to-[#a855f7] ml-1 animate-blink"></span>
                 </FadeIn>
 
-                {/* Description */}
+                {/* Description 
                 <FadeIn delay={1000}>
                   <p className="text-base md:text-lg text-gray-400 max-w-xl leading-relaxed font-light">
                     I’m a Full-Stack Web Developer and Prompt Engineer, turning ideas into seamless digital experiences. From crafting responsive UIs to optimizing AI-driven prompts, I bridge the gap between humans and technology. Whether coding the backend or fine-tuning AI interactions, I build smart, scalable, and intuitive solutions. 🚀
                   </p>
-                </FadeIn>
+                </FadeIn> */}
+
+                {/* Dynamic Bio from Admin Panel */}
+                {profileBio && (
+                  <FadeIn delay={1000}>
+                    <p className="text-base md:text-lg text-gray-400 max-w-xl leading-relaxed font-light">
+                      {profileBio}
+                    </p>
+                  </FadeIn>
+                )}
 
                 {/* Tech Stack */}
                 <FadeIn delay={1200} className="flex flex-wrap gap-3 justify-start">
@@ -278,24 +338,21 @@ const Home = () => {
                 {/* Social Links */}
                 <FadeIn delay={1600} className="flex gap-4 items-center justify-start">
                   <div className="hidden sm:flex gap-4">
-                    {SOCIAL_LINKS.map((social, index) => (
+                    {socialLinks.map((social, index) => (
                       <SocialLink key={index} {...social} />
                     ))}
                   </div>
                   {resumeUrl && (
                     <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
-                      <button className="group relative px-6 py-3">
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl opacity-50 blur-md group-hover:opacity-90 transition-all duration-700"></div>
-                        <div className="relative h-full bg-[#030014] backdrop-blur-xl rounded-lg border border-green-500/30 leading-none overflow-hidden">
-                          <div className="absolute inset-0 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 bg-gradient-to-r from-green-500/20 to-emerald-500/20"></div>
-                          <span className="relative flex items-center justify-center gap-2 text-sm font-medium">
-                            <FileText className="w-4 h-4 text-green-400" />
-                            <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                              View Resume
-                            </span>
+                      <div className="group relative">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-full blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
+                        <div className="relative px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 cursor-pointer">
+                          <span className="bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-transparent bg-clip-text text-sm font-medium flex items-center">
+                            <FileText className="w-4 h-4 mr-2 text-indigo-400" />
+                            View Resume
                           </span>
                         </div>
-                      </button>
+                      </div>
                     </a>
                   )}
                 </FadeIn>
@@ -321,15 +378,24 @@ const Home = () => {
                 <div
                   className={`relative z-10 w-full opacity-90 transform transition-transform duration-500 ${isHovering ? "scale-105" : "scale-100"}`}
                 >
-                  {shouldLoadLottie && lottieOptions ? (
-                    <DotLottieReact {...lottieOptions} />
+                  {shouldLoadLottie && lottieOptions && !lottieError ? (
+                    <DotLottieReact
+                      {...lottieOptions}
+                      onError={() => setLottieError(true)}
+                    />
                   ) : (
-                    // Loading skeleton
-                    <div className="w-full h-full flex items-center justify-center">
+                    // Loading skeleton - more visible
+                    <div className="w-full h-full flex items-center justify-center min-h-[400px]">
                       <div className="relative w-full aspect-square max-w-[500px]">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full animate-pulse"></div>
-                        <div className="absolute inset-[10%] bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full animate-pulse delay-75"></div>
-                        <div className="absolute inset-[20%] bg-gradient-to-br from-blue-500/15 to-purple-500/15 rounded-full animate-pulse delay-150"></div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full animate-pulse"></div>
+                        <div className="absolute inset-[10%] bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-full animate-pulse delay-75"></div>
+                        <div className="absolute inset-[20%] bg-gradient-to-br from-indigo-500/40 to-purple-500/40 rounded-full animate-pulse delay-150"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4"></div>
+                            <span className="text-gray-400 text-sm">Loading animation...</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}

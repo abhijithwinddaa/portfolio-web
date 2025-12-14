@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 const CustomCursor = () => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isPointer, setIsPointer] = useState(false);
     const [isHidden, setIsHidden] = useState(false);
+    const positionRef = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
         const updatePosition = (e) => {
+            positionRef.current = { x: e.clientX, y: e.clientY };
             setPosition({ x: e.clientX, y: e.clientY });
-        };
 
-        const updateCursorType = () => {
-            const hoveredElement = document.elementFromPoint(position.x, position.y);
+            // Check cursor type directly in the same handler for better performance
+            const hoveredElement = document.elementFromPoint(e.clientX, e.clientY);
             if (hoveredElement) {
                 const computedStyle = window.getComputedStyle(hoveredElement);
                 setIsPointer(
@@ -28,17 +29,15 @@ const CustomCursor = () => {
         const handleMouseLeave = () => setIsHidden(true);
 
         window.addEventListener('mousemove', updatePosition);
-        window.addEventListener('mousemove', updateCursorType);
         document.body.addEventListener('mouseenter', handleMouseEnter);
         document.body.addEventListener('mouseleave', handleMouseLeave);
 
         return () => {
             window.removeEventListener('mousemove', updatePosition);
-            window.removeEventListener('mousemove', updateCursorType);
             document.body.removeEventListener('mouseenter', handleMouseEnter);
             document.body.removeEventListener('mouseleave', handleMouseLeave);
         };
-    }, [position.x, position.y]);
+    }, []);
 
     // Don't render on mobile
     if (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {

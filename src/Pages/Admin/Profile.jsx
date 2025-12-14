@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Save, 
-  Loader2, 
-  Upload, 
+import {
+  Save,
+  Loader2,
+  Upload,
   X,
   User
 } from 'lucide-react';
@@ -22,16 +22,16 @@ const Profile = () => {
     resume_url: '',
     profile_image: ''
   });
-  
+
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeFileName, setResumeFileName] = useState('');
-  
+
   useEffect(() => {
     fetchProfile();
   }, []);
-  
+
   const fetchProfile = async () => {
     try {
       setLoading(true);
@@ -39,11 +39,11 @@ const Profile = () => {
         .from('profile')
         .select('*')
         .single();
-        
+
       if (error && error.code !== 'PGRST116') {
         throw error;
       }
-      
+
       if (data) {
         setProfileData(data);
         if (data.profile_image) {
@@ -60,136 +60,136 @@ const Profile = () => {
       setLoading(false);
     }
   };
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfileData(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     if (file.size > 5 * 1024 * 1024) {
       alert('File size must be less than 5MB');
       return;
     }
-    
+
     setImageFile(file);
-    
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
     };
     reader.readAsDataURL(file);
   };
-  
+
   const handleResumeChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     if (file.size > 10 * 1024 * 1024) {
       alert('File size must be less than 10MB');
       return;
     }
-    
+
     setResumeFile(file);
     setResumeFileName(file.name);
   };
-  
+
   const removeImage = () => {
     setImageFile(null);
     setImagePreview('');
     setProfileData(prev => ({ ...prev, profile_image: '' }));
   };
-  
+
   const removeResume = () => {
     setResumeFile(null);
     setResumeFileName('');
     setProfileData(prev => ({ ...prev, resume_url: '' }));
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setSaving(true);
-      
+
       let profileImageUrl = profileData.profile_image;
       let resumeUrl = profileData.resume_url;
-      
+
       // Upload profile image if there's a new one
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `profile_${Date.now()}.${fileExt}`;
         const filePath = `profile/${fileName}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('profile-images')
           .upload(filePath, imageFile);
-          
+
         if (uploadError) throw uploadError;
-        
+
         const { data } = supabase.storage
           .from('profile-images')
           .getPublicUrl(filePath);
-          
+
         profileImageUrl = data.publicUrl;
       }
-      
+
       // Upload resume if there's a new one
       if (resumeFile) {
         const fileExt = resumeFile.name.split('.').pop();
         const fileName = `resume_${Date.now()}.${fileExt}`;
         const filePath = `resumes/${fileName}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('documents')
           .upload(filePath, resumeFile);
-          
+
         if (uploadError) throw uploadError;
-        
+
         const { data } = supabase.storage
           .from('documents')
           .getPublicUrl(filePath);
-          
+
         resumeUrl = data.publicUrl;
       }
-      
+
       const updatedProfile = {
         ...profileData,
         profile_image: profileImageUrl,
         resume_url: resumeUrl,
         updated_at: new Date().toISOString()
       };
-      
+
       // Check if profile exists
       const { data: existingProfile } = await supabase
         .from('profile')
         .select('id')
         .single();
-      
+
       let error;
-      
+
       if (existingProfile) {
         // Update existing profile
         const { error: updateError } = await supabase
           .from('profile')
           .update(updatedProfile)
           .eq('id', existingProfile.id);
-          
+
         error = updateError;
       } else {
         // Create new profile
         const { error: insertError } = await supabase
           .from('profile')
           .insert([{ ...updatedProfile, created_at: new Date().toISOString() }]);
-          
+
         error = insertError;
       }
-      
+
       if (error) throw error;
-      
+
       alert('Profile saved successfully!');
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -198,7 +198,7 @@ const Profile = () => {
       setSaving(false);
     }
   };
-  
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -206,13 +206,13 @@ const Profile = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-white">Profile</h1>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Profile Image */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
@@ -220,9 +220,9 @@ const Profile = () => {
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="w-32 h-32 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
               {imagePreview ? (
-                <img 
-                  src={imagePreview} 
-                  alt="Profile preview" 
+                <img
+                  src={imagePreview}
+                  alt="Profile preview"
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -281,11 +281,11 @@ const Profile = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Basic Information */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 space-y-6">
           <h2 className="text-lg font-semibold text-white mb-4">Basic Information</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Name */}
             <div>
@@ -303,7 +303,7 @@ const Profile = () => {
                 placeholder="Your full name"
               />
             </div>
-            
+
             {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-300">
@@ -321,24 +321,23 @@ const Profile = () => {
               />
             </div>
           </div>
-          
+
           {/* Bio */}
           <div>
             <label htmlFor="bio" className="block text-sm font-medium text-gray-300">
-              Short Bio <span className="text-red-500">*</span>
+              Short Bio <span className="text-gray-500 text-xs">(optional)</span>
             </label>
             <textarea
               id="bio"
               name="bio"
               value={profileData.bio}
               onChange={handleChange}
-              required
               rows={2}
               className="mt-1 block w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30"
-              placeholder="A brief introduction (1-2 sentences)"
+              placeholder="A brief introduction (1-2 sentences) - leave empty to use default"
             />
           </div>
-          
+
           {/* About Me */}
           <div>
             <label htmlFor="about_me" className="block text-sm font-medium text-gray-300">
@@ -355,11 +354,11 @@ const Profile = () => {
             />
           </div>
         </div>
-        
+
         {/* Contact Information */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 space-y-6">
           <h2 className="text-lg font-semibold text-white mb-4">Contact Information</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Email */}
             <div>
@@ -376,7 +375,7 @@ const Profile = () => {
                 placeholder="your.email@example.com"
               />
             </div>
-            
+
             {/* Phone */}
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-300">
@@ -393,7 +392,7 @@ const Profile = () => {
               />
             </div>
           </div>
-          
+
           {/* Location */}
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-gray-300">
@@ -410,11 +409,11 @@ const Profile = () => {
             />
           </div>
         </div>
-        
+
         {/* Resume */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Resume / CV</h2>
-          
+
           {resumeFileName ? (
             <div className="flex items-center gap-4">
               <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white">
@@ -467,7 +466,7 @@ const Profile = () => {
             </div>
           )}
         </div>
-        
+
         {/* Submit Button */}
         <div className="flex justify-end">
           <button

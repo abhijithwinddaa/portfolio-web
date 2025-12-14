@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
     live_url TEXT,
     github_url TEXT,
     image_url TEXT,
+    display_order INTEGER DEFAULT 999,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -44,6 +45,7 @@ CREATE TABLE IF NOT EXISTS public.certificates (
     expiry_date DATE,
     credential_url TEXT,
     image_url TEXT,
+    display_order INTEGER DEFAULT 999,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -55,6 +57,7 @@ CREATE TABLE IF NOT EXISTS public.tech_stack (
     category TEXT NOT NULL,
     proficiency INTEGER DEFAULT 50,
     icon_url TEXT,
+    display_order INTEGER DEFAULT 999,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -110,6 +113,43 @@ CREATE TABLE IF NOT EXISTS public.portfolio_comments (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Blog Posts table
+CREATE TABLE IF NOT EXISTS public.blog_posts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    excerpt TEXT,
+    content TEXT,
+    cover_image TEXT,
+    tags TEXT[] DEFAULT '{}',
+    published BOOLEAN DEFAULT FALSE,
+    views INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Site Settings table
+CREATE TABLE IF NOT EXISTS public.site_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    resume_url TEXT,
+    site_title TEXT,
+    site_description TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert default site settings
+INSERT INTO public.site_settings (id, resume_url, site_title, site_description)
+VALUES (1, '', 'Developer Portfolio', 'A modern developer portfolio')
+ON CONFLICT (id) DO NOTHING;
+
+-- Function to increment blog views
+CREATE OR REPLACE FUNCTION increment_blog_views(post_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE public.blog_posts SET views = views + 1 WHERE id = post_id;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Enable Row Level Security on all tables
 ALTER TABLE public.profile ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
@@ -119,6 +159,8 @@ ALTER TABLE public.experience ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.social_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.section_visibility ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.portfolio_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for admin access
 -- For now, we'll allow all operations for simplicity
