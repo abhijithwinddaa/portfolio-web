@@ -4,14 +4,13 @@ import {
   Github,
   Linkedin,
   Mail,
-  ExternalLink,
   Instagram,
   Sparkles,
   FileText,
 } from "lucide-react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { supabase } from "../supabase";
-import { useInView, fadeIn, fadeInRight, fadeInLeft, zoomIn } from "../hooks/useInView";
+import { useInView } from "../hooks/useInView";
 import { FadeIn } from "../hooks/AnimatedComponents";
 
 // Memoized Components with Intersection Observer
@@ -77,28 +76,6 @@ const TechStack = memo(({ tech }) => (
   <div className="px-4 py-2 hidden sm:block rounded-full bg-white/5 backdrop-blur-sm border border-white/10 text-sm text-gray-300 hover:bg-white/10 transition-colors">
     {tech}
   </div>
-));
-
-const CTAButton = memo(({ href, text, icon: Icon }) => (
-  <a href={href}>
-    <button className="group relative w-[160px]">
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#4f52c9] to-[#8644c5] rounded-xl opacity-50 blur-md group-hover:opacity-90 transition-all duration-700"></div>
-      <div className="relative h-11 bg-[#030014] backdrop-blur-xl rounded-lg border border-white/10 leading-none overflow-hidden">
-        <div className="absolute inset-0 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 bg-gradient-to-r from-[#4f52c9]/20 to-[#8644c5]/20"></div>
-        <span className="absolute inset-0 flex items-center justify-center gap-2 text-sm group-hover:gap-3 transition-all duration-300">
-          <span className="bg-gradient-to-r from-gray-200 to-white bg-clip-text text-transparent font-medium z-10">
-            {text}
-          </span>
-          <Icon
-            className={`w-4 h-4 text-gray-200 ${text === "Contact"
-              ? "group-hover:translate-x-1"
-              : "group-hover:rotate-45"
-              } transform transition-all duration-300 z-10`}
-          />
-        </span>
-      </div>
-    </button>
-  </a>
 ));
 
 const SocialLink = memo(({ icon: Icon, link }) => (
@@ -271,8 +248,8 @@ const Home = () => {
     if (!shouldLoadLottie) return null;
 
     return {
-      // Captain Deadpool animation from LottieFiles
-      src: "https://assets-v2.lottiefiles.com/a/55105c28-af2a-11ef-be3b-9bab2c745e85/iJngYOR65K.lottie",
+      // Student with laptop animation from LottieFiles
+      src: "https://assets-v2.lottiefiles.com/a/88eefff2-1185-11ee-a378-afe8af342ff9/EVSaWJKUAx.lottie",
       loop: true,
       autoplay: true,
       style: { width: "100%", height: "100%" },
@@ -304,13 +281,6 @@ const Home = () => {
                   </span>
                   <span className="w-[3px] h-6 bg-gradient-to-t from-[#6366f1] to-[#a855f7] ml-1 animate-blink"></span>
                 </FadeIn>
-
-                {/* Description 
-                <FadeIn delay={1000}>
-                  <p className="text-base md:text-lg text-gray-400 max-w-xl leading-relaxed font-light">
-                    I’m a Full-Stack Web Developer and Prompt Engineer, turning ideas into seamless digital experiences. From crafting responsive UIs to optimizing AI-driven prompts, I bridge the gap between humans and technology. Whether coding the backend or fine-tuning AI interactions, I build smart, scalable, and intuitive solutions. 🚀
-                  </p>
-                </FadeIn> */}
 
                 {/* Dynamic Bio from Admin Panel */}
                 {profileBio && (
