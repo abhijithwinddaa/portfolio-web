@@ -43,7 +43,7 @@ const ProfileImage = memo(() => (
 
       {/* Image and Container */}
       <div className="relative w-72 h-72 sm:w-80 sm:h-80 rounded-full overflow-hidden shadow-[0_0_40px_rgba(120,119,198,0.3)] transform transition-all duration-700 group-hover:scale-105">
-         {/* White Border */}
+        {/* White Border */}
         <div className="absolute inset-0 border-4 border-white/20 rounded-full z-30 transition-all duration-700 group-hover:border-white/40 group-hover:scale-105" />
 
         {/* Optimized overlay effects - disabled on mobile */}
@@ -122,7 +122,7 @@ const StatCard = memo(
 
 const AboutPage = () => {
   // Memoized calculations
-  const { totalProjects, totalCertificates, YearExperience } = useMemo(() => {
+  const { totalProjects, totalCertificates } = useMemo(() => {
     const storedProjects = JSON.parse(localStorage.getItem("projects") || "[]");
     const storedCertificates = JSON.parse(
       localStorage.getItem("certificates") || "[]"

@@ -1,6 +1,3 @@
-<<<<<<< Updated upstream
-
-=======
 # Modern Developer Portfolio
 
 A high-performance, visually stunning developer portfolio built with React, Vite, and Tailwind CSS. This project features a fully functional Admin Panel for managing content dynamically without touching the code.
@@ -86,4 +83,4 @@ Feel free to fork this repository and submit pull requests for any improvements 
 
 ---
 Built with ❤️ using React & Tailwind CSS.
->>>>>>> Stashed changes
+
