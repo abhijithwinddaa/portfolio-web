@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import "./index.css";
 import NotFound from "./Pages/NotFound";
 import Home from "./Pages/Home";
@@ -16,25 +16,35 @@ import { supabase } from "./supabase";
 import CustomCursor from "./components/CustomCursor";
 import ScrollProgress from "./components/ScrollProgress";
 
-// Blog pages
+// Blog pages - keep synchronous for SEO
 import Blog from "./Pages/Blog";
 import BlogDetail from "./Pages/BlogDetail";
-import BlogManagement from "./Pages/Admin/BlogManagement";
 
-// Admin components
-import AdminLayout from "./Pages/Admin/AdminLayout";
-import Dashboard from "./Pages/Admin/Dashboard";
-import Projects from "./Pages/Admin/Projects";
-import ProjectForm from "./Pages/Admin/ProjectForm";
-import Certificates from "./Pages/Admin/Certificates";
-import CertificateForm from "./Pages/Admin/CertificateForm";
-import TechStack from "./Pages/Admin/TechStack";
-import Experience from "./Pages/Admin/Experience";
-import Profile from "./Pages/Admin/Profile";
-import SocialLinks from "./Pages/Admin/SocialLinks";
-import Settings from "./Pages/Admin/Settings";
-import Login from "./Pages/Admin/Login";
-import AuthGuard from "./Pages/Admin/AuthGuard";
+// Lazy-loaded Admin components for bundle splitting
+const AdminLayout = lazy(() => import("./Pages/Admin/AdminLayout"));
+const Dashboard = lazy(() => import("./Pages/Admin/Dashboard"));
+const Projects = lazy(() => import("./Pages/Admin/Projects"));
+const ProjectForm = lazy(() => import("./Pages/Admin/ProjectForm"));
+const Certificates = lazy(() => import("./Pages/Admin/Certificates"));
+const CertificateForm = lazy(() => import("./Pages/Admin/CertificateForm"));
+const TechStack = lazy(() => import("./Pages/Admin/TechStack"));
+const Experience = lazy(() => import("./Pages/Admin/Experience"));
+const Profile = lazy(() => import("./Pages/Admin/Profile"));
+const SocialLinks = lazy(() => import("./Pages/Admin/SocialLinks"));
+const Settings = lazy(() => import("./Pages/Admin/Settings"));
+const Login = lazy(() => import("./Pages/Admin/Login"));
+const AuthGuard = lazy(() => import("./Pages/Admin/AuthGuard"));
+const BlogManagement = lazy(() => import("./Pages/Admin/BlogManagement"));
+
+// Loading fallback component for lazy-loaded routes
+const AdminLoadingFallback = () => (
+  <div className="min-h-screen bg-[#030014] flex items-center justify-center">
+    <div className="text-center space-y-4">
+      <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto" />
+      <p className="text-gray-400">Loading...</p>
+    </div>
+  </div>
+);
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
   const [sectionVisibility, setSectionVisibility] = useState({
@@ -123,23 +133,23 @@ function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogDetail />} />
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<Login />} />
-          <Route path="/admin" element={<AuthGuard />}>
-            <Route element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="projects" element={<Projects />} />
-              <Route path="projects/new" element={<ProjectForm />} />
-              <Route path="projects/edit/:id" element={<ProjectForm />} />
-              <Route path="certificates" element={<Certificates />} />
-              <Route path="certificates/new" element={<CertificateForm />} />
-              <Route path="certificates/edit/:id" element={<CertificateForm />} />
-              <Route path="tech-stack" element={<TechStack />} />
-              <Route path="experience" element={<Experience />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="social-links" element={<SocialLinks />} />
-              <Route path="blog" element={<BlogManagement />} />
-              <Route path="settings" element={<Settings />} />
+          {/* Admin Routes - Suspense wraps lazy components inside Route elements */}
+          <Route path="/admin/login" element={<Suspense fallback={<AdminLoadingFallback />}><Login /></Suspense>} />
+          <Route path="/admin" element={<Suspense fallback={<AdminLoadingFallback />}><AuthGuard /></Suspense>}>
+            <Route element={<Suspense fallback={<AdminLoadingFallback />}><AdminLayout /></Suspense>}>
+              <Route index element={<Suspense fallback={<AdminLoadingFallback />}><Dashboard /></Suspense>} />
+              <Route path="projects" element={<Suspense fallback={<AdminLoadingFallback />}><Projects /></Suspense>} />
+              <Route path="projects/new" element={<Suspense fallback={<AdminLoadingFallback />}><ProjectForm /></Suspense>} />
+              <Route path="projects/edit/:id" element={<Suspense fallback={<AdminLoadingFallback />}><ProjectForm /></Suspense>} />
+              <Route path="certificates" element={<Suspense fallback={<AdminLoadingFallback />}><Certificates /></Suspense>} />
+              <Route path="certificates/new" element={<Suspense fallback={<AdminLoadingFallback />}><CertificateForm /></Suspense>} />
+              <Route path="certificates/edit/:id" element={<Suspense fallback={<AdminLoadingFallback />}><CertificateForm /></Suspense>} />
+              <Route path="tech-stack" element={<Suspense fallback={<AdminLoadingFallback />}><TechStack /></Suspense>} />
+              <Route path="experience" element={<Suspense fallback={<AdminLoadingFallback />}><Experience /></Suspense>} />
+              <Route path="profile" element={<Suspense fallback={<AdminLoadingFallback />}><Profile /></Suspense>} />
+              <Route path="social-links" element={<Suspense fallback={<AdminLoadingFallback />}><SocialLinks /></Suspense>} />
+              <Route path="blog" element={<Suspense fallback={<AdminLoadingFallback />}><BlogManagement /></Suspense>} />
+              <Route path="settings" element={<Suspense fallback={<AdminLoadingFallback />}><Settings /></Suspense>} />
             </Route>
           </Route>
 

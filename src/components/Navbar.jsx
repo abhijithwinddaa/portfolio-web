@@ -1,34 +1,50 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Menu, X } from "lucide-react";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [activeSection, setActiveSection] = useState("Home");
+    const rafRef = useRef(null);
+    const lastScrollTime = useRef(0);
 
-    const navItems = [
+    // Memoize navItems to prevent recreation on each render
+    const navItems = useMemo(() => [
         { href: "#Home", label: "Home" },
         { href: "#About", label: "About" },
         { href: "#Portofolio", label: "Portofolio" },
         { href: "#Contact", label: "Contact" },
         { href: "/admin", label: "Admin" },
-    ];
+    ], []);
 
-    useEffect(() => {
-        const handleScroll = () => {
+    // Memoized scroll handler with throttling via RAF
+    const handleScroll = useCallback(() => {
+        const now = Date.now();
+        // Throttle to ~60fps (16ms)
+        if (now - lastScrollTime.current < 16) return;
+        lastScrollTime.current = now;
+
+        if (rafRef.current) {
+            cancelAnimationFrame(rafRef.current);
+        }
+
+        rafRef.current = requestAnimationFrame(() => {
             setScrolled(window.scrollY > 20);
-            const sections = navItems.map(item => {
-                if (!item.href.startsWith("#")) return null;
-                const section = document.querySelector(item.href);
-                if (section) {
-                    return {
-                        id: item.href.replace("#", ""),
-                        offset: section.offsetTop - 550,
-                        height: section.offsetHeight
-                    };
-                }
-                return null;
-            }).filter(Boolean);
+            
+            const sections = navItems
+                .filter(item => item.href.startsWith("#"))
+                .map(item => {
+                    const section = document.querySelector(item.href);
+                    if (section) {
+                        return {
+                            id: item.href.replace("#", ""),
+                            offset: section.offsetTop - 550,
+                            height: section.offsetHeight
+                        };
+                    }
+                    return null;
+                })
+                .filter(Boolean);
 
             const currentPosition = window.scrollY;
             const active = sections.find(section =>
@@ -39,12 +55,19 @@ const Navbar = () => {
             if (active) {
                 setActiveSection(active.id);
             }
-        };
+        });
+    }, [navItems]);
 
-        window.addEventListener("scroll", handleScroll);
+    useEffect(() => {
+        window.addEventListener("scroll", handleScroll, { passive: true });
         handleScroll();
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+            }
+        };
+    }, [handleScroll]);
 
     useEffect(() => {
         if (isOpen) {

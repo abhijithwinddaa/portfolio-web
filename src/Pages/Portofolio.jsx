@@ -99,9 +99,6 @@ function a11yProps(index) {
   };
 }
 
-// No default projects - all projects will come from Supabase
-const NEW_PROJECTS = [];
-
 export default function FullWidthTabs() {
   const theme = useTheme();
   const [value, setValue] = useState(0);
@@ -109,9 +106,21 @@ export default function FullWidthTabs() {
   const [certificates, setCertificates] = useState([]);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [showAllCertificates, setShowAllCertificates] = useState(false);
-  const isMobile = window.innerWidth < 768;
-  const initialItems = isMobile ? 4 : 6;
   const [techStack, setTechStack] = useState([]);
+
+  // SSR-safe mobile detection using state
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Safe to access window inside useEffect
+    setIsMobile(window.innerWidth < 768);
+
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const initialItems = isMobile ? 4 : 6;
 
   useEffect(() => {
     // Initialize AOS once

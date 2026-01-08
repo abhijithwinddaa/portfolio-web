@@ -1,34 +1,50 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 
 const CustomCursor = () => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isPointer, setIsPointer] = useState(false);
     const [isHidden, setIsHidden] = useState(false);
-    const positionRef = useRef({ x: 0, y: 0 });
+    const rafRef = useRef(null);
+    const lastCheckTime = useRef(0);
+    const cachedPointerState = useRef(false);
 
     useEffect(() => {
         const updatePosition = (e) => {
-            positionRef.current = { x: e.clientX, y: e.clientY };
-            setPosition({ x: e.clientX, y: e.clientY });
-
-            // Check cursor type directly in the same handler for better performance
-            const hoveredElement = document.elementFromPoint(e.clientX, e.clientY);
-            if (hoveredElement) {
-                const computedStyle = window.getComputedStyle(hoveredElement);
-                setIsPointer(
-                    computedStyle.cursor === 'pointer' ||
-                    hoveredElement.tagName === 'A' ||
-                    hoveredElement.tagName === 'BUTTON' ||
-                    hoveredElement.closest('a') ||
-                    hoveredElement.closest('button')
-                );
+            // Cancel pending RAF to avoid stacking
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
             }
+
+            rafRef.current = requestAnimationFrame(() => {
+                setPosition({ x: e.clientX, y: e.clientY });
+
+                // Throttle pointer state check to every 100ms for performance
+                const now = Date.now();
+                if (now - lastCheckTime.current > 100) {
+                    lastCheckTime.current = now;
+                    const hoveredElement = document.elementFromPoint(e.clientX, e.clientY);
+                    if (hoveredElement) {
+                        const isPointerElement =
+                            hoveredElement.tagName === 'A' ||
+                            hoveredElement.tagName === 'BUTTON' ||
+                            hoveredElement.closest('a') ||
+                            hoveredElement.closest('button') ||
+                            hoveredElement.closest('[role="button"]');
+
+                        if (isPointerElement !== cachedPointerState.current) {
+                            cachedPointerState.current = isPointerElement;
+                            setIsPointer(isPointerElement);
+                        }
+                    }
+                }
+            });
         };
 
         const handleMouseEnter = () => setIsHidden(false);
         const handleMouseLeave = () => setIsHidden(true);
 
-        window.addEventListener('mousemove', updatePosition);
+        // Use passive listener for better scroll performance
+        window.addEventListener('mousemove', updatePosition, { passive: true });
         document.body.addEventListener('mouseenter', handleMouseEnter);
         document.body.addEventListener('mouseleave', handleMouseLeave);
 
@@ -36,11 +52,14 @@ const CustomCursor = () => {
             window.removeEventListener('mousemove', updatePosition);
             document.body.removeEventListener('mouseenter', handleMouseEnter);
             document.body.removeEventListener('mouseleave', handleMouseLeave);
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+            }
         };
     }, []);
 
-    // Don't render on mobile
-    if (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    // Don't render on mobile or touch devices
+    if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
         return null;
     }
 
@@ -55,11 +74,9 @@ const CustomCursor = () => {
         }
       `}</style>
             <div
-                className={`fixed pointer-events-none z-[9999] transition-opacity duration-300 ${isHidden ? 'opacity-0' : 'opacity-100'}`}
+                className={`fixed pointer-events-none z-[9999] will-change-transform transition-opacity duration-300 ${isHidden ? 'opacity-0' : 'opacity-100'}`}
                 style={{
-                    left: `${position.x}px`,
-                    top: `${position.y}px`,
-                    transform: 'translate(-50%, -50%)'
+                    transform: `translate3d(${position.x - 6}px, ${position.y - 6}px, 0)`
                 }}
             >
                 {/* Main dot */}

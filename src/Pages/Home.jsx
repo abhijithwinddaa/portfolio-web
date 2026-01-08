@@ -171,76 +171,63 @@ const Home = () => {
     return () => clearTimeout(timeout);
   }, [handleTyping]);
 
+  // Combined data fetching using Promise.all for better performance
   useEffect(() => {
-    // Fetch tech stack from Supabase
-    const fetchTechStack = async () => {
+    const fetchAllData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('tech_stack')
-          .select('*')
-          .order('display_order', { ascending: true })
-          .order('category', { ascending: true });
-        if (error) throw error;
-        setTechStack(data || []);
-      } catch (error) {
-        setTechStack([]);
-      }
-    };
+        const [
+          techStackResult,
+          settingsResult,
+          socialLinksResult,
+          profileResult
+        ] = await Promise.all([
+          supabase
+            .from('tech_stack')
+            .select('*')
+            .order('display_order', { ascending: true })
+            .order('category', { ascending: true }),
+          supabase
+            .from('site_settings')
+            .select('resume_url')
+            .single(),
+          supabase
+            .from('social_links')
+            .select('*'),
+          supabase
+            .from('profile')
+            .select('bio')
+            .single()
+        ]);
 
-    // Fetch resume URL
-    const fetchResume = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('site_settings')
-          .select('resume_url')
-          .single();
-        if (error) throw error;
-        if (data) setResumeUrl(data.resume_url);
-      } catch (error) {
-        console.error("Error fetching resume:", error);
-      }
-    };
+        // Process tech stack
+        if (!techStackResult.error && techStackResult.data) {
+          setTechStack(techStackResult.data);
+        }
 
-    fetchTechStack();
-    fetchResume();
+        // Process resume URL
+        if (!settingsResult.error && settingsResult.data?.resume_url) {
+          setResumeUrl(settingsResult.data.resume_url);
+        }
 
-    // Fetch social links from Supabase
-    const fetchSocialLinks = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('social_links')
-          .select('*');
-        if (error) throw error;
-        // Map platform to icon
-        const linksWithIcons = (data || []).map(link => ({
-          icon: ICON_MAP[link.platform.toLowerCase()] || Github,
-          link: link.url
-        }));
-        setSocialLinks(linksWithIcons);
-      } catch (error) {
-        console.error("Error fetching social links:", error);
-        // Fallback to empty array
-        setSocialLinks([]);
-      }
-    };
-    fetchSocialLinks();
+        // Process social links with icon mapping
+        if (!socialLinksResult.error && socialLinksResult.data) {
+          const linksWithIcons = socialLinksResult.data.map(link => ({
+            icon: ICON_MAP[link.platform.toLowerCase()] || Github,
+            link: link.url
+          }));
+          setSocialLinks(linksWithIcons);
+        }
 
-    // Fetch profile bio
-    const fetchProfile = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profile')
-          .select('bio')
-          .single();
-        if (error) throw error;
-        if (data && data.bio) {
-          setProfileBio(data.bio);
+        // Process profile bio
+        if (!profileResult.error && profileResult.data?.bio) {
+          setProfileBio(profileResult.data.bio);
         }
       } catch (error) {
-        console.error("Error fetching profile:", error);
+        console.error("Error fetching home data:", error);
       }
     };
-    fetchProfile();
+
+    fetchAllData();
   }, []);
 
   // Optimized Lottie configuration - only created when needed and memoized
